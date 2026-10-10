@@ -499,8 +499,10 @@ function takePhoto() {
     label: isXY() ? 'X-Y 图形' : S.vmode + ' 波形',
     truth: { fA, fB, phase: Truth.xyPhaseDeg(t), tdiv: isXY() ? 0 : tdivNominal(), beatDiv: isXY() ? 0 : (1 / Math.abs(fA - fB)) / tdivEff() * (S.mag ? 10 : 1), conn: { ...S.conn } },
   };
+  photo.id = Date.now();
   Teach.photos.push(photo);
-  if (Teach.photos.length > 24) Teach.photos.shift();
+  PhotoDB.put(photo);
+  if (Teach.photos.length > 24) PhotoDB.del(Teach.photos.shift().id);
   Teach.pv = Teach.photos.length - 1;
   const fl = el('div', '', $('#glass'), { position: 'absolute', inset: '0', background: '#fff', opacity: '.7', transition: 'opacity .4s', pointerEvents: 'none' });
   setTimeout(() => { fl.style.opacity = '0'; setTimeout(() => fl.remove(), 450); }, 30);
@@ -539,7 +541,7 @@ function renderPhotos(p) {
     p.innerHTML = `<div class="eyebrow">照片</div><h3>还没有照片</h3><p class="muted">点页面顶上的"拍照"，大屏和 LCD 读数会拍在同一张里，和上课时要求的一样。照片可以放大，用格子量 a、b、X 这些长度。</p>`;
     return;
   }
-  p.innerHTML = `<div class="eyebrow">照片 · 刷新页面就没了</div><h3>${Teach.photos.length} 张照片</h3><p class="small muted">点开放大，可以数格子。</p><div class="gallery" id="gal"></div>`;
+  p.innerHTML = `<div class="eyebrow">照片 · 保留最近 24 张</div><h3>${Teach.photos.length} 张照片</h3><p class="small muted">点开放大，可以数格子。</p><div class="gallery" id="gal"></div>`;
   const gal = $('#gal');
   Teach.photos.slice().reverse().forEach(ph => {
     const f = el('figure', '', gal); f.innerHTML = `<img src="${ph.url}" alt="${ph.label}"><figcaption>${ph.when} · ${ph.label}</figcaption>`;
@@ -785,7 +787,7 @@ function renderNotes(p) {
     <p class="small muted" style="margin:0 0 10px">导出的是一份给别的 AI 看的"交接单"：学习进度、每次失误和疑问、当时的面板状态和读数、你填过的数据。粘贴给任何 AI，它就知道你卡在哪，可以接着教你。不带图片，面板状态都写成了文字。</p><div id="nExport"></div>
     <div id="nList"></div>`;
   p.insertAdjacentHTML('beforeend', `<h4 style="margin-top:22px">备份和恢复</h4>
-    <p class="small muted">所有数据（填的数、记录表、我的记录、课程进度）只存在这个浏览器里。备份会下载一个文件，换电脑、换浏览器或清了浏览器数据后，用它恢复。</p>
+    <p class="small muted">所有数据（填的数、记录表、我的记录、课程进度、照片、面板现场）只存在这个浏览器里。备份会下载一个文件，换电脑、换浏览器或清了浏览器数据后，用它恢复。</p>
     <div class="row"><button class="tbtn" id="bkSave" type="button">备份全部数据</button><label class="tbtn" for="bkFile" style="cursor:pointer">从备份恢复</label><input type="file" id="bkFile" accept=".json,application/json" hidden></div><div id="bkMsg" class="small" style="margin-top:6px"></div>`);
   $('#bkSave').onclick = backupData;
   $('#bkFile').onchange = e => { const f = e.target.files[0]; if (f) restoreData(f); };
@@ -937,11 +939,13 @@ function restartAt(k, msg) {
 
 /* ---------------- 备份和恢复：把浏览器里存的东西导成一个文件 ---------------- */
 
-function backupData() {
+async function backupData() {
+  saveSession(true);
   const data = {};
   try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('osc-sim-')) data[k] = localStorage.getItem(k); } }
   catch (e) { $('#bkMsg').textContent = '这个浏览器不让读存储，备份不了。'; return; }
-  const blob = new Blob([JSON.stringify({ app: 'physlab-oscilloscope', saved: new Date().toISOString(), data }, null, 1)], { type: 'application/json' });
+  const photos = Teach.photos.map(({ t, ...rest }) => rest);
+  const blob = new Blob([JSON.stringify({ app: 'physlab-oscilloscope', saved: new Date().toISOString(), data, photos }, null, 1)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = '示波器模拟台-备份-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -955,11 +959,87 @@ function restoreData(file) {
       const o = JSON.parse(r.result);
       if (o.app !== 'physlab-oscilloscope' || !o.data) throw new Error('不是这个模拟台的备份文件');
       for (const k in o.data) if (k.startsWith('osc-sim-')) localStorage.setItem(k, o.data[k]);
-      $('#bkMsg').textContent = '恢复好了，马上刷新页面…';
-      setTimeout(() => location.reload(), 800);
+      Session.skip = true;   // 刷新前别再把当前页面的现场写回去，盖掉刚恢复的
+      (async () => {
+        if (Array.isArray(o.photos)) { await PhotoDB.clear(); for (const ph of o.photos) await PhotoDB.put(ph); }
+        $('#bkMsg').textContent = '恢复好了，马上刷新页面…';
+        setTimeout(() => location.reload(), 800);
+      })();
     } catch (e) { $('#bkMsg').textContent = '恢复失败：' + e.message + '。'; }
   };
   r.readAsText(file);
+}
+
+/* ---------------- 现场自动保存：刷新、关掉再打开，回到离开时的样子 ---------------- */
+
+// 照片太大，放 IndexedDB；其他放 localStorage
+const PhotoDB = {
+  db: null,
+  open() {
+    if (this.db) return Promise.resolve(this.db);
+    return new Promise(res => {
+      try {
+        const r = indexedDB.open('osc-sim', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('photos', { keyPath: 'id' });
+        r.onsuccess = () => { this.db = r.result; res(this.db); };
+        r.onerror = () => res(null);
+      } catch (e) { res(null); }
+    });
+  },
+  async tx(mode, fn) {
+    const db = await this.open(); if (!db) return null;
+    return new Promise(res => {
+      try { const t = db.transaction('photos', mode), st = t.objectStore('photos'), out = fn(st); t.oncomplete = () => res(out && out.result); t.onerror = () => res(null); }
+      catch (e) { res(null); }
+    });
+  },
+  put(p) { const { t, ...rest } = p; return this.tx('readwrite', st => st.put(rest)); },
+  del(id) { return this.tx('readwrite', st => st.delete(id)); },
+  clear() { return this.tx('readwrite', st => st.clear()); },
+  all() { return this.tx('readonly', st => st.getAll()); },
+};
+
+const Session = { last: '', skip: false };
+function saveSession(force) {
+  if (Session.skip) return;
+  histCommit();
+  const o = {
+    v: 1, state: snapState(), peek: S.B.peek,
+    mode: Teach.mode, tab: Teach.tab === 'diag' ? 'lessons' : Teach.tab,
+    lesson: Teach.lesson, step: Teach.step, done: Teach.done, mem: Teach.mem,
+    stepSnap: Teach.stepSnap, gbase: Teach.gbase, fail: Teach.fail, resume: Teach.resume, pv: Teach.pv,
+    hist: { cur: Hist.cur, undo: Hist.undo.slice(-60), redo: Hist.redo.slice(-30) },
+  };
+  const str = JSON.stringify(o);
+  if (!force && str === Session.last) return;
+  Session.last = str;
+  try { localStorage.setItem('osc-sim-session', str); } catch (e) { /* 存不下就算了，别的数据照常 */ }
+}
+function restoreSession() {
+  const o = store.get('session', null);
+  if (!o || o.v !== 1) return false;
+  try {
+    applyState(o.state); S.B.peek = !!o.peek;
+    Object.assign(Teach, { lesson: o.lesson, step: o.step || 0, done: o.done || [], mem: o.mem || {}, stepSnap: o.stepSnap || {}, gbase: o.gbase || {},
+      fail: o.fail || null, resume: o.resume || null, pv: o.pv, tab: o.tab || 'lessons', f: { t0: now() } });
+    if (Teach.lesson != null && !LESSONS[Teach.lesson]) Teach.lesson = null;
+    Hist.cur = o.hist && o.hist.cur || snapState(); Hist.undo = (o.hist && o.hist.undo) || []; Hist.redo = (o.hist && o.hist.redo) || [];
+    Panel.refresh(); updUndo();
+    setMode(o.mode === 'sim' ? 'sim' : 'teach');
+    if (Teach.mode === 'teach' && Teach.lesson != null) toast(`已回到上次离开的地方：第 ${Teach.lesson} 课「${LESSONS[Teach.lesson].title}」第 ${Teach.step + 1} 步。`);
+    return true;
+  } catch (e) { return false; }
+}
+async function loadPhotos() {
+  const all = (await PhotoDB.all()) || [];
+  all.sort((a, b) => a.id - b.id);
+  const keep = all.slice(-24);
+  for (const p of all.slice(0, -24)) PhotoDB.del(p.id);
+  Teach.photos = keep.map(p => ({ ...p, t: -1 }));   // 上次拍的照片，不算这一步新拍的
+  if (Teach.pv == null || Teach.pv >= Teach.photos.length) Teach.pv = Teach.photos.length ? Teach.photos.length - 1 : null;
+  renderTabs();
+  if (Teach.tab === 'photos') renderPane();
+  document.querySelectorAll('.pv-host').forEach(photoViewer);
 }
 
 /* ---------------- 说明书：这个网页怎么用（不是示波器怎么用） ---------------- */
@@ -1006,7 +1086,7 @@ const HELP = `
 <ul><li>顶栏 <span class="k">撤回</span>，或按 <kbd>⌘Z</kbd> / <kbd>Ctrl+Z</kbd>；重做按 <kbd>⌘⇧Z</kbd> / <kbd>Ctrl+Shift+Z</kbd>。拖一次旋钮算一步，最多撤回 150 步。</li></ul>
 
 <h4 id="h-photo">拍照和读数</h4>
-<ul><li><span class="k">拍照</span> 会把大屏和 LCD 读数拍在同一张里，和上课要求一样。照片在侧栏"照片"页，点开放大后数格子。照片只在这次打开的页面里，刷新就没了。</li></ul>
+<ul><li><span class="k">拍照</span> 会把大屏和 LCD 读数拍在同一张里，和上课要求一样。照片在侧栏"照片"页，点开放大后数格子。最多保留最近 24 张，刷新、关掉都不丢。</li></ul>
 
 <h4 id="h-side">侧栏各页</h4>
 <ul>
@@ -1024,7 +1104,8 @@ const HELP = `
 <h4 id="h-data">数据存在哪</h4>
 <ul>
 <li>填的数、记录表、我的记录、完成了哪些课，都存在<b>你自己的浏览器</b>里，不上传。换浏览器、换电脑、清除浏览器数据就没了。</li>
-<li>本地文件版和在线版各存各的，不互通。照片不保存，刷新就没。</li>
+<li>刷新、关掉页面再打开，都会回到你离开时的样子：同一课同一步、面板原样、照片都在，撤回也接着能用。</li>
+<li>本地文件版和在线版各存各的，不互通。</li>
 <li>怕丢就备份：「我的记录」页最下面有 <span class="k">备份全部数据</span>，会下载一个文件；换电脑或清了浏览器后，用 <span class="k">从备份恢复</span> 导回来。</li>
 <li>模拟器故意让示波器带 2～3% 的仪器误差，这样"用标准方波修正"才有意义；CAL 标准方波按 2 Vp-p 模拟，上课以端子旁边印的为准。</li>
 </ul>`;
@@ -1083,6 +1164,10 @@ function boot() {
     if (innerWidth <= 1180) $('#side').scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   resetBench(); Panel.refresh(); histReset();
-  setMode(store.get('mode', 'teach'));
+  if (!restoreSession()) setMode(store.get('mode', 'teach'));
+  loadPhotos();
+  setInterval(saveSession, 1000);
+  addEventListener('pagehide', () => saveSession(true));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSession(true); });
 }
 boot();
