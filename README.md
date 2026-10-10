@@ -2,7 +2,7 @@
 
 在网页上练大学物理实验：照教材复刻仪器面板，旋钮、开关、接线都能真的操作。教学模式一步步带你做完教材上的实验内容，仿真模式像上课一样自己从头来。
 
-网址：https://physlab.lennox8888.top
+网址：https://physlab.lennox8888.top　·　源码：https://github.com/singular-sound/physlab
 
 这不是官方软件。内容按《大学物理实验教程》编排，和教材或老师说法有出入的地方，以教材和老师为准。
 
