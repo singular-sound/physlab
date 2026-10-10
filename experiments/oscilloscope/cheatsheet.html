@@ -48,11 +48,13 @@ p{margin:6px 0}
 .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
 .warn{background:var(--warn-bg);border-color:transparent;color:var(--fg)}
 .warn b{color:var(--warn)}
-.tbl{width:100%;border-collapse:collapse;font-size:15px}
-.tbl td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
-.tbl tr:last-child td{border-bottom:0}
-.tbl td:first-child{white-space:nowrap;padding-right:10px}
-.tbl td:last-child{color:var(--muted);font-size:14px}
+/* 旋钮预置表：手机上三列排不下，每项排成两行——旋钮 + 位置一行，原因一行 */
+.tbl,.tbl tbody{display:block;width:100%}
+.tbl tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+.tbl tr:last-child{border-bottom:0}
+.tbl td{display:block;padding:0;line-height:1.9}
+.tbl td:nth-child(2){text-align:right;font-weight:600}
+.tbl td:last-child{grid-column:1/-1;color:var(--muted);font-size:14px;line-height:1.5}
 
 details.src{margin:10px 0;background:var(--card);border:1px solid var(--line);border-radius:12px}
 details.src summary{padding:11px 14px;font-weight:600;cursor:pointer}
