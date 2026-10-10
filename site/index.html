@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PhysLab 大学物理实验模拟台</title>
+<meta name="description" content="课前在网页上把大学物理实验的仪器摸熟：照教材复刻面板，一步步带你做。">
+<!--PWA-HEAD-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* 布局：窄栏单列——标题、实验卡片网格、使用须知、页脚；颜色与示波器模拟台同一套 */
+:root{
+  --bg:#e4e8e5; --fg:#18201d; --muted:#5a6661; --line:#c5ccc8; --card:#f4f6f4; --card2:#eaeeeb;
+  --accent:#17734f; --accent-ink:#fff; --screen:#07100b; --trace:#7ef2b5;
+  --font-ui:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-display:"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"Share Tech Mono","SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121715; --fg:#e2e8e4; --muted:#93a19a; --line:#2c3632; --card:#1a201e; --card2:#212926; --accent:#43c98e; --accent-ink:#06150e; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121715; --fg:#e2e8e4; --muted:#93a19a; --line:#2c3632; --card:#1a201e; --card2:#212926; --accent:#43c98e; --accent-ink:#06150e; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{margin:0;font:15px/1.65 var(--font-ui);padding-inline:20px;padding-block:0 40px}
+.wrap{max-width:1040px;margin:0 auto}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+header{display:flex;align-items:baseline;gap:14px;padding-block:28px 8px;flex-wrap:wrap}
+.logo{font:700 30px/1 var(--font-display);letter-spacing:.04em}
+.logo span{color:var(--accent)}
+.tag{color:var(--muted);font-size:14px}
+.hero{padding-block:18px 26px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.hero h1{font:700 clamp(26px,4vw,38px)/1.2 var(--font-ui);margin:0 0 10px;text-wrap:balance;letter-spacing:.01em}
+.hero p{margin:0;color:var(--muted);max-width:60ch}
+
+.section-title{font:600 13px/1 var(--font-ui);letter-spacing:.12em;color:var(--muted);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.exp{display:grid;grid-template-rows:auto 1fr;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-decoration:none;transition:border-color .15s,transform .15s}
+.exp:hover{border-color:var(--accent);transform:translateY(-2px)}
+.exp .screen{position:relative;aspect-ratio:16/9;max-width:100%;background:radial-gradient(110% 95% at 50% 46%,#13241a 0%,#0a150f 55%,#030805 100%)}
+.exp canvas{position:absolute;inset:0;width:100%;height:100%}
+.exp .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px}
+.exp h2{font:600 19px/1.3 var(--font-ui);margin:0}
+.exp .no{font:600 12px/1 var(--font-mono);color:var(--accent);letter-spacing:.06em}
+.exp p{margin:0;color:var(--muted);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:1px 9px;color:var(--muted)}
+.go{margin-top:auto;align-self:flex-start;background:var(--accent);color:var(--accent-ink);font-weight:600;border-radius:8px;padding:8px 14px;font-size:14px}
+.soon{border:1.5px dashed var(--line);border-radius:14px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:24px;color:var(--muted);min-height:220px}
+.soon b{color:var(--fg);font-weight:600}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:34px}
+.note{background:var(--card2);border-radius:12px;padding:14px 16px;font-size:14px}
+.note b{display:block;margin-bottom:4px;font-size:14.5px}
+footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:6px 18px}
+@media (prefers-reduced-motion:reduce){.exp{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="logo">Phys<span>Lab</span></div><div class="tag">大学物理实验模拟台</div></header>
+  <section class="hero">
+    <h1>上实验课之前，先在网页上把仪器摸熟</h1>
+    <p>照教材复刻仪器面板，旋钮、开关、接线都能真的操作。教学模式一步步带你做完教材上的实验内容，仿真模式让你像上课一样自己从头来。</p>
+  </section>
+
+  <h2 class="section-title">实验列表</h2>
+  <div class="grid">
+    <a class="exp" href="oscilloscope/">
+      <div class="screen"><canvas id="lis" aria-hidden="true"></canvas></div>
+      <div class="body">
+        <div class="no">实验十一 · v1.0</div>
+        <h2>示波器原理及使用</h2>
+        <p>GOS-630FC 双踪示波器，加两台信号源。测峰峰值和周期、标准方波修正、直流分量、李萨如图形、拍频法。</p>
+        <div class="chips"><span class="chip">10 课</span><span class="chip">教学模式 / 仿真模式</span><span class="chip">撤回与禁区</span><span class="chip">学习记录可导出</span></div>
+        <span class="go">进入实验 →</span>
+      </div>
+    </a>
+    <div class="soon"><b>更多实验</b>预习到哪个实验，就往这里加哪个。</div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>用电脑或平板打开</b>仪器面板比较复杂，需要大一点的屏幕。平板建议横屏，手指操作和鼠标一样：按住旋钮拖。</div>
+    <div class="note"><b>数据只存在你的浏览器里</b>不需要注册，也不上传。换电脑或清浏览器数据之前，在实验里的「我的记录」页点「备份全部数据」。</div>
+    <div class="note"><b>非官方的练习工具</b>内容按《大学物理实验教程》编排，和教材或老师说法有出入的地方，以教材和老师为准。</div>
+  </div>
+
+  <footer><span>PhysLab · 大学物理实验模拟台</span><span>开源项目，欢迎同学一起补实验</span></footer>
+</div>
+<script>
+// 卡片上的小示波器屏：一个慢慢转动的李萨如图形（2:3）
+(function () {
+  const c = document.getElementById('lis'); if (!c) return;
+  const ctx = c.getContext('2d');
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let w = 0, h = 0, dpr = 1;
+  const size = () => { const r = c.getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio || 1); w = r.width; h = r.height; c.width = w * dpr; c.height = h * dpr; };
+  size(); addEventListener('resize', size);
+  const draw = t => {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(159,181,168,.18)'; ctx.lineWidth = 1;
+    const gx = w / 10, gy = h / 8;
+    for (let i = 1; i < 10; i++) { ctx.beginPath(); ctx.moveTo(i * gx, 0); ctx.lineTo(i * gx, h); ctx.stroke(); }
+    for (let j = 1; j < 8; j++) { ctx.beginPath(); ctx.moveTo(0, j * gy); ctx.lineTo(w, j * gy); ctx.stroke(); }
+    const ph = t / 2600, ax = w * 0.36, ay = h * 0.36;
+    ctx.beginPath();
+    for (let k = 0; k <= 600; k++) {
+      const s = k / 600 * Math.PI * 2;
+      const x = w / 2 + ax * Math.sin(2 * s), y = h / 2 - ay * Math.sin(3 * s + ph);
+      k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(70,255,150,.18)'; ctx.lineWidth = 6; ctx.stroke();
+    ctx.strokeStyle = 'rgba(160,255,200,.95)'; ctx.lineWidth = 1.6; ctx.stroke();
+    if (!reduce) requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+})();
+</script>
+<!--PWA-REGISTER-->
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "PhysLab 大学物理实验模拟台",
+  "short_name": "PhysLab",
+  "description": "课前在网页上把大学物理实验的仪器摸熟。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#e4e8e5",
+  "theme_color": "#17734f",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

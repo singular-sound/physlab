@@ -1,0 +1,413 @@
+<title>示波器模拟台（v1.0）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* 布局：上方是实验台（示波器 + 两台信号源，按比例缩放），右侧是教学/工具侧栏；窄屏时侧栏落到下面 */
+:root{
+  --bg:#e4e8e5; --fg:#18201d; --muted:#5a6661; --line:#c5ccc8; --card:#f4f6f4; --card2:#eaeeeb;
+  --accent:#17734f; --accent-ink:#ffffff; --warn:#b5541b; --ok:#1d7a46; --bad:#b0302c;
+  --hl:#ff9d2e;
+  /* 仪器本体（实物颜色，两种主题下都一样） */
+  --panel:#d8d5cb; --panel-2:#cbc7bb; --panel-ink:#26251f; --panel-line:#6f6c62;
+  --bezel:#c4c0b3; --glass:#07100b; --knob:#ebe9e3; --knob-skirt:#34332f; --slot:#2a2926;
+  --lcd:#aebb98; --lcd-ink:#1c2618; --gen:#2f3437; --gen-2:#3b4145; --gen-ink:#e8ece9; --vfd:#58f0c8;
+  --font-ui:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-panel:"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"Share Tech Mono","SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121715; --fg:#e2e8e4; --muted:#93a19a; --line:#2c3632; --card:#1a201e; --card2:#212926;
+  --accent:#43c98e; --accent-ink:#06150e; --warn:#e58a4e; --ok:#52c784; --bad:#ef6b62; --hl:#ffae4d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121715; --fg:#e2e8e4; --muted:#93a19a; --line:#2c3632; --card:#1a201e; --card2:#212926;
+  --accent:#43c98e; --accent-ink:#06150e; --warn:#e58a4e; --ok:#52c784; --bad:#ef6b62; --hl:#ffae4d; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+html,body{background:var(--bg);color:var(--fg)}
+body{margin:0;font:14px/1.6 var(--font-ui);padding-inline:16px;padding-block:0 24px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-block:14px 12px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.brand{display:flex;flex-direction:column;line-height:1.25;margin-right:auto;min-width:0}
+.brand b{font:700 22px/1.1 var(--font-panel);letter-spacing:.04em}
+.brand span{color:var(--muted);font-size:12.5px}
+.modes{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.modes button{border:0;background:none;padding:7px 14px;cursor:pointer;color:var(--muted)}
+.modes button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.tbtn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 12px;cursor:pointer}
+.tbtn:hover{border-color:var(--accent)}
+.tbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,28vw,390px);gap:18px;align-items:start}
+@media (max-width:999px){.layout{grid-template-columns:minmax(0,1fr)}}
+.bench{min-width:0}
+.stage-wrap{position:relative;width:100%;overflow:hidden;border-radius:14px}
+.stage{position:absolute;left:0;top:0;width:1260px;height:1060px;transform-origin:0 0;perspective:2600px;perspective-origin:50% -35%}
+.room{position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 0%,#5d6a6a 0%,#3b4545 55%,#2a3131 100%)}
+.rig{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(var(--tilt,5deg)) rotateY(var(--yaw,-6deg));transform-origin:50% 92%;transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+.flat .rig,.intro .rig{--tilt:0deg;--yaw:0deg}
+/* 正面和 2D 不需要 3D 排布：按正常顺序画，连接线一定盖在面板上面（iPad Safari 在同一层时会把面板画到线前面） */
+.flat .rig,.flat .plane{transform-style:flat}
+.flat .face.top,.flat .face.side-l,.flat .face.side-r{display:none}
+.table{position:absolute;left:-300px;width:1860px;top:978px;height:900px;transform-origin:50% 0;transform:rotateX(90deg);
+  background:repeating-linear-gradient(90deg,#0000 0 18px,#0000000a 18px 19px,#0000 19px 47px,#ffffff08 47px 49px),linear-gradient(#8a6a4c,#6b4f36 60%,#4f3a28);box-shadow:0 0 120px #000a inset}
+.table-edge{position:absolute;left:-300px;width:1860px;top:978px;height:60px;background:linear-gradient(#5b4330,#3b2b1f);box-shadow:0 10px 30px #0008}
+.plane{position:absolute;left:40px;top:66px;width:1180px;height:910px;transform-style:preserve-3d}
+.face{position:absolute;pointer-events:none;backface-visibility:hidden}
+.face.top{transform-origin:50% 100%;transform:rotateX(90deg)}
+.face.side-l{transform-origin:100% 50%;transform:rotateY(-90deg)}
+.face.side-r{transform-origin:0 50%;transform:rotateY(90deg)}
+.shadow-floor{position:absolute;pointer-events:none;border-radius:50%;background:radial-gradient(closest-side,#000c,#0000);filter:blur(6px)}
+.bench-hint{color:var(--muted);font-size:12.5px;margin:8px 0 0}
+.bench-hint kbd{font:12px var(--font-mono);border:1px solid var(--line);border-radius:4px;padding:0 4px;background:var(--card)}
+
+/* ---------- 示波器机身 ---------- */
+.scope{position:absolute;left:0;top:0;width:1180px;height:584px;border-radius:10px;color:var(--panel-ink);font-family:var(--font-panel);
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .09 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"),linear-gradient(175deg,#e4e1d8,#d6d2c7 55%,#cbc7bb);
+  box-shadow:0 0 0 7px #a9aaa4,0 0 0 9px #8d8e88,0 1px 0 9px #c9cac4,0 2px 0 #fff9 inset,0 -2px 0 #0002 inset,0 40px 50px -26px #000c}
+.scope::before{content:"";position:absolute;inset:-9px;border-radius:14px;box-shadow:0 1px 0 #ffffff70 inset;pointer-events:none}
+.scope .sec{position:absolute;border:1.5px solid var(--panel-line);border-radius:6px;box-shadow:0 1px 0 #fff8,0 1px 0 #fff8 inset}
+.scope .sec-title{position:absolute;font:700 13px/1 var(--font-panel);letter-spacing:.14em;background:#d9d5ca;padding:0 6px;color:var(--panel-ink)}
+.scope .band{position:absolute;height:20px;background:linear-gradient(#34332e,#24231f);color:#e4e0d4;font:700 13px/20px var(--font-panel);letter-spacing:.24em;text-align:center;border-radius:3px;box-shadow:0 1px 0 #fff9}
+.brandplate{position:absolute;left:22px;top:12px;font:700 17px/1 var(--font-panel);letter-spacing:.08em;color:#2b4a8c;text-shadow:0 1px 0 #fff8}
+.brandplate small{font:600 11px var(--font-panel);color:var(--panel-ink);letter-spacing:.06em;margin-left:8px}
+.pscrew{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f4f4f2,#a5a59f 55%,#6e6e68);box-shadow:0 1px 1px #0006,0 0 0 1px #0002}
+.pscrew::after{content:"";position:absolute;left:2px;right:2px;top:5px;height:2px;background:#5a5a55;transform:rotate(var(--r,30deg))}
+.crt-bezel{position:absolute;left:14px;top:36px;width:452px;height:392px;border-radius:20px;background:linear-gradient(150deg,#3b3c3b,#1e1f1e 60%,#2c2d2c);
+  box-shadow:0 2px 0 #fffa,0 -1px 0 #0003,0 0 0 4px #bebab0,0 0 0 5px #a39f95,0 3px 6px 4px #0003,0 2px 4px #0008 inset}
+.crt-glass{position:absolute;left:10px;top:10px;width:432px;height:372px;border-radius:24px/30px;overflow:hidden;background:radial-gradient(110% 95% at 50% 46%,#13241a 0%,#0a150f 55%,#030805 100%);
+  box-shadow:0 0 0 2px #000 inset,0 0 30px 6px #000 inset}
+.crt-glass canvas{position:absolute;left:-14px;top:-4px;width:460px;height:380px}
+.crt-glass canvas.glow{filter:blur(7px) saturate(1.3);opacity:.55;mix-blend-mode:screen}
+.crt-glass svg{position:absolute;left:-14px;top:-4px;width:460px;height:380px;pointer-events:none}
+.crt-glass .sheen{position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(118deg,#ffffff1c 0%,#ffffff08 26%,#0000 27%,#0000 62%,#ffffff06 63%,#0000 80%),radial-gradient(70% 55% at 28% 14%,#ffffff17,#0000 70%),radial-gradient(130% 120% at 50% 50%,#0000 58%,#0008 100%)}
+.lcd{position:absolute;left:510px;top:22px;width:330px;height:86px;background:linear-gradient(180deg,#b9c6a2,#a5b38d);border-radius:4px;border:7px solid #2d2d2a;
+  box-shadow:0 0 0 2px #8c8a82,0 1px 0 3px #fff9,0 3px 8px #000a inset;
+  font:23px/1 var(--font-mono);color:#17200f;text-shadow:1px 1px 0 #0000001c;display:grid;grid-template-columns:1fr 1fr;align-content:center;row-gap:8px;padding:0 14px;overflow:hidden}
+.lcd::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,#ffffff30,#0000 40%);pointer-events:none}
+.lcd.off{background:linear-gradient(180deg,#8d957f,#7f8771)}
+.lcd.off span{visibility:hidden}
+.lcd.test span{visibility:visible;color:#17200f}
+.lcd span{white-space:nowrap}
+.lcd .r{text-align:right}
+.lcd .mag{position:absolute;left:14px;top:4px;font-size:11px}
+.legend{position:absolute;font:600 12px/1.05 var(--font-panel);letter-spacing:.05em;text-align:center;white-space:nowrap;transform:translateX(-50%);pointer-events:none;color:#262520;text-shadow:0 1px 0 #ffffff70}
+.legend.sm{font-size:10.5px;font-weight:500}
+.legend.left{transform:none;text-align:left}
+.legend.right{transform:translateX(-100%);text-align:right}
+
+/* 旋钮：外圈滚花跟着转，表面高光不转（光从左上方来） */
+.ctl{position:absolute;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.stage-wrap{touch-action:manipulation;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+/* 触屏：手指比鼠标粗，看不见的可按范围往外扩一圈 */
+.touch .ctl.knob::after{content:"";position:absolute;inset:-12px;border-radius:50%}
+.touch .btn::after,.touch .key::after{content:"";position:absolute;inset:-8px}
+.touch .slide::before{inset:-10px -16px}
+.back-link{text-decoration:none;color:var(--fg);white-space:nowrap}
+.ctl:active{cursor:grabbing}
+.knob{border-radius:50%}
+.knob::before{content:"";position:absolute;inset:-3px;border-radius:50%;background:radial-gradient(closest-side,#0006,#0000);transform:translate(4px,7px);filter:blur(3px);z-index:-1}
+.knob .rot{position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle,#0000 0 58%,#0000 58%),repeating-conic-gradient(#d9d6ce 0 5deg,#9b978d 5deg 10deg);box-shadow:0 0 0 1px #4a483f}
+.knob .rot::before{content:"";position:absolute;inset:16%;border-radius:50%;background:radial-gradient(circle at 50% 50%,#ecebe6,#d6d3cb 70%,#c3bfb5);box-shadow:0 0 0 1px #8c887e}
+.knob .rot::after{content:"";position:absolute;left:calc(50% - 1.6px);top:17%;width:3.2px;height:30%;background:#1d1c19;border-radius:2px}
+.knob .lit{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 34% 28%,#ffffffa8 0%,#ffffff30 22%,#0000 46%),radial-gradient(circle at 70% 78%,#0000 30%,#0000004d 72%)}
+.knob.big .rot{background:repeating-conic-gradient(#2e2d29 0 4deg,#5b5951 4deg 8deg);box-shadow:0 0 0 1px #111}
+.knob.big .rot::before{inset:14%;background:radial-gradient(circle,#f2f1ec,#dcd9d1 70%,#c8c4ba)}
+.gen .knob .rot{background:repeating-conic-gradient(#1a1c1e 0 5deg,#3d4246 5deg 10deg);box-shadow:0 0 0 1px #000}
+.gen .knob .rot::before{background:radial-gradient(circle at 50% 50%,#c9ccce,#9aa0a4 60%,#70767a);box-shadow:0 0 0 2px #15171a}
+.gen .knob .rot::after{background:#111}
+.ticks{position:absolute;pointer-events:none}
+.screw{border-radius:50%;background:radial-gradient(circle,#2b2a27 40%,#5b5850 42%,#8b877c 70%);box-shadow:0 1px 1px #fff8,0 1px 2px #0006 inset}
+.screw .rot{position:absolute;inset:22%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c8c4b9,#8c887d)}
+.screw .rot::after{content:"";position:absolute;left:10%;right:10%;top:calc(50% - 1px);height:2px;background:#2a2a28}
+/* 按键：有厚度的键帽 */
+.btn{border-radius:3px;background:linear-gradient(#f7f5f0,#dcd9d1 60%,#cfcbc2);cursor:pointer;
+  box-shadow:0 1px 0 #fff inset,0 -1px 0 #0002 inset,0 4px 0 #8f8b81,0 5px 0 #6d6a62,0 7px 6px #0006;transition:transform .06s,box-shadow .06s}
+.btn.on{transform:translateY(3px);box-shadow:0 1px 0 #fff8 inset,0 1px 0 #8f8b81,0 2px 0 #6d6a62,0 3px 3px #0005;background:linear-gradient(#e4e1da,#cdc9c0)}
+.btn.power{border-radius:6px;background:linear-gradient(#5c5f62,#35383a 60%,#2a2c2e);box-shadow:0 1px 0 #fff3 inset,0 5px 0 #151617,0 6px 0 #0b0b0c,0 9px 8px #0008}
+.btn.power.on{transform:translateY(4px);box-shadow:0 1px 0 #fff2 inset,0 1px 0 #151617,0 2px 0 #0b0b0c,0 3px 3px #0007}
+.led{position:absolute;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7a3a30,#3a1410);box-shadow:0 0 0 1.5px #222,0 1px 0 2px #fff6;pointer-events:none}
+.led.on{background:radial-gradient(circle at 35% 30%,#ffd2c4,#ff4a2e 45%,#c51d08);box-shadow:0 0 0 1.5px #222,0 0 10px 2px #ff4a2eaa}
+.led.green{background:radial-gradient(circle at 35% 30%,#2f5a35,#11240f)}
+.led.green.on{background:radial-gradient(circle at 35% 30%,#e8ffe9,#5cff7a 45%,#159a2e);box-shadow:0 0 0 1.5px #222,0 0 10px 2px #5cff7aaa}
+/* 拨动开关 */
+.slide{cursor:grab;touch-action:none}
+.slide::before{content:"";position:absolute;inset:-6px -12px}
+.slide.dragging .lever{transition:none}
+.slide .track{position:absolute;left:-2px;top:-2px;right:-2px;bottom:-2px;border-radius:5px;background:linear-gradient(90deg,#141412,#2c2b27 50%,#141412);box-shadow:0 1px 0 #fffa,0 2px 3px #000 inset}
+.slide .lever{position:absolute;left:-6px;right:-6px;height:17px;border-radius:3px;background:linear-gradient(#fbfaf6,#d8d5cc 45%,#aeaa9f);box-shadow:0 1px 0 #fff inset,0 3px 0 #77736a,0 5px 5px #0007;transition:top .12s}
+.slide .lever::after{content:"";position:absolute;left:3px;right:3px;top:7px;height:2px;background:#0003;border-radius:1px}
+.slide-opt{position:absolute;font:600 11px/1 var(--font-panel);letter-spacing:.03em;cursor:pointer;padding:2px 3px;border-radius:3px;white-space:nowrap;color:var(--panel-ink)}
+.slide-opt.sel{background:#26251f;color:#f2efe6}
+/* BNC 插座、接线柱 */
+.bnc{border-radius:50%;cursor:pointer;background:radial-gradient(circle at 50% 50%,#050505 0 16%,#d9b85a 17% 20%,#0b0b0b 21% 30%,#f2f2f2 31%,#b8b8b8 40%,#fafafa 48%,#8e8e8e 58%,#cfcfcf 66%,#6a6a6a 72%,#2a2a2a 74%,#1a1a1a 100%);
+  box-shadow:0 0 0 2px #0005,0 4px 6px #0008}
+.bnc::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 34% 28%,#ffffffb0,#0000 30%);pointer-events:none}
+.bnc.connected{box-shadow:0 0 0 2px #0005,0 4px 6px #0008}
+.term{border-radius:50%;cursor:pointer;background:radial-gradient(circle,#1a1a1a 22%,#b9a35a 25%,#f2df98 42%,#8c7a3e 70%);box-shadow:0 3px 5px #0008}
+.term.red{background:radial-gradient(circle,#1a1a1a 22%,#9c2a20 25%,#e0574a 45%,#7a1d15 70%)}
+.term.black{background:radial-gradient(circle,#555 22%,#111 25%,#3d3d3d 45%,#0b0b0b 70%)}
+
+/* 高亮（教学模式指引） */
+.hl{outline:3px solid var(--hl);outline-offset:5px;border-radius:50%;animation:pulse 1.2s ease-in-out infinite;z-index:5}
+.btn.hl,.slide.hl,.lcd.hl,.gen-disp.hl,.key.hl{border-radius:5px}
+.hlbox{position:absolute;border:3px solid var(--hl);border-radius:10px;animation:pulse 1.2s ease-in-out infinite;pointer-events:none;z-index:6}
+@keyframes pulse{50%{outline-color:transparent;border-color:transparent}}
+@media (prefers-reduced-motion:reduce){.hl,.hlbox{animation:none}.slide .lever,.rig{transition:none}}
+
+/* ---------- 信号源 ---------- */
+.gen{position:absolute;top:640px;height:262px;border-radius:10px;color:var(--gen-ink);font-family:var(--font-panel);
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .09 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"),linear-gradient(175deg,#454b50,#33383c 55%,#2a2e31);
+  box-shadow:0 0 0 6px #1d2023,0 0 0 7px #4a5055,0 2px 0 #ffffff1c inset,0 40px 46px -24px #000d}
+.gen .legend{color:#d7dcd9;text-shadow:0 -1px 0 #0008}
+.gen .gtitle{position:absolute;left:18px;top:12px;font:700 15px/1 var(--font-panel);letter-spacing:.06em}
+.gen .gtitle small{display:block;font:400 12px/1.4 var(--font-ui);color:#aab3af;letter-spacing:0;margin-top:4px}
+.gen-disp{position:absolute;background:radial-gradient(120% 140% at 50% 0%,#0b1d17,#040b08);border-radius:5px;box-shadow:0 0 0 3px #0e1011,0 0 0 4px #565c60,0 2px 6px #000 inset;font-family:var(--font-mono);color:var(--vfd);text-shadow:0 0 4px #58f0c8,0 0 12px #58f0c870;padding:8px 12px;overflow:hidden}
+.gen-disp::after{content:"";position:absolute;inset:0;background:linear-gradient(165deg,#ffffff16,#0000 45%);pointer-events:none}
+.gen-disp .big{font-size:30px;line-height:1;letter-spacing:.04em;white-space:pre}
+.gen-disp .big u{text-decoration:none;border-bottom:3px solid var(--vfd)}
+.gen-disp .sub{font-size:13px;margin-top:8px;color:#8fd9c3;white-space:nowrap}
+.gen-disp .entry{color:#ffd166;text-shadow:0 0 6px #ffd16680}
+.gen-disp.cover{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:#9aa5a1;text-shadow:none;font:13px/1.4 var(--font-ui);text-align:center;cursor:pointer}
+.key{position:absolute;border-radius:4px;background:linear-gradient(#6a7176,#4b5156 55%,#40464a);color:#eef2f0;font:600 13px/1 var(--font-panel);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:0 1px 0 #ffffff30 inset,0 3px 0 #1b1e20,0 4px 0 #0c0d0e,0 6px 5px #0007;user-select:none;-webkit-user-select:none;letter-spacing:.03em;transition:transform .05s,box-shadow .05s}
+.key:active,.key.on{transform:translateY(2.5px);box-shadow:0 1px 0 #ffffff20 inset,0 0.5px 0 #1b1e20,0 1px 0 #0c0d0e,0 2px 2px #0006}
+.key.on{background:linear-gradient(#34a07a,#23775a)}
+.key.wide{font-size:12px}
+
+/* ---------- 2D 视角：简洁的平面画法（第一版的样子），只换外观，功能完全一样 ---------- */
+.skin2d .room,.skin2d .table,.skin2d .face,.skin2d .pscrew,.skin2d canvas.glow{display:none}
+.skin2d .plane{left:0;top:0}
+.skin2d .scope{background:linear-gradient(#dedbd2,var(--panel));border-radius:14px;box-shadow:0 1px 0 #fff8 inset,0 -2px 0 #0002 inset,0 14px 30px -12px #0006,0 2px 4px #0003}
+.skin2d .scope::before{display:none}
+.skin2d .scope .sec{box-shadow:none}
+.skin2d .scope .sec-title{background:var(--panel)}
+.skin2d .scope .band{background:var(--panel-ink);color:var(--panel);box-shadow:none}
+.skin2d .crt-bezel{background:linear-gradient(145deg,#cfcbbf,#b3ae9f);box-shadow:0 2px 3px #fff9 inset,0 -2px 4px #0003 inset}
+.skin2d .crt-glass{border-radius:22px/26px;background:radial-gradient(120% 100% at 50% 45%,#0d1c14 0%,var(--glass) 70%);box-shadow:0 0 0 3px #222 inset,0 0 18px #000 inset}
+.skin2d .crt-glass .sheen{background:radial-gradient(60% 40% at 30% 18%,#ffffff14,transparent 70%)}
+.skin2d .lcd{background:var(--lcd);border:6px solid #3a3a36;box-shadow:0 1px 4px #0006 inset;color:var(--lcd-ink);text-shadow:none}
+.skin2d .lcd::after{display:none}
+.skin2d .lcd.off{background:#8f9881}
+.skin2d .legend{text-shadow:none}
+.skin2d .knob{background:radial-gradient(circle at 50% 50%,var(--knob-skirt) 62%,#1d1c1a 63%,#46443f 100%);box-shadow:0 3px 5px #0006}
+.skin2d .knob::before,.skin2d .knob .lit,.skin2d .knob .rot::before{display:none}
+.skin2d .knob .rot,.skin2d .knob.big .rot{inset:14%;background:radial-gradient(circle at 38% 30%,#fff 0%,var(--knob) 40%,#c9c6bd 100%);box-shadow:0 1px 2px #0007,0 0 0 1px #0003}
+.skin2d .knob .rot::after{left:calc(50% - 1.5px);top:6%;width:3px;height:34%;background:#22211e}
+.skin2d .gen .knob{background:radial-gradient(circle at 50% 50%,#1b1d1f 62%,#0e0f10 63%,#2a2d30 100%)}
+.skin2d .gen .knob .rot{background:radial-gradient(circle at 38% 30%,#6b7075,#3d4246 60%,#2a2e31);box-shadow:0 1px 2px #0007}
+.skin2d .gen .knob .rot::after{background:#f2f2f2}
+.skin2d .screw .rot{background:#9a968b}
+.skin2d .btn{border-radius:4px;background:linear-gradient(#f2f0ea,#cfccc3);box-shadow:0 3px 0 #77746b,0 4px 5px #0005}
+.skin2d .btn.on{transform:translateY(2px);box-shadow:0 1px 0 #77746b,0 1px 2px #0005;background:linear-gradient(#d6d3ca,#c2bfb5)}
+.skin2d .btn.power{border-radius:6px;background:linear-gradient(#5a5c5e,#2f3133);box-shadow:0 4px 0 #111,0 5px 6px #0007}
+.skin2d .btn.power.on{box-shadow:0 1px 0 #111;transform:translateY(3px)}
+.skin2d .led{background:#4a1d17;box-shadow:0 0 0 1.5px #222}
+.skin2d .led.on{background:#ff4a2e;box-shadow:0 0 0 1.5px #222,0 0 8px #ff4a2e}
+.skin2d .led.green{background:#1d3a20}
+.skin2d .led.green.on{background:#5cff7a;box-shadow:0 0 0 1.5px #222,0 0 8px #5cff7a}
+.skin2d .slide .track{inset:0;border-radius:4px;background:var(--slot);box-shadow:0 1px 2px #000 inset}
+.skin2d .slide .lever{left:-5px;right:-5px;height:16px;background:linear-gradient(#f4f2ec,#bdb9ae);box-shadow:0 2px 3px #0007}
+.skin2d .slide .lever::after{display:none}
+.skin2d .bnc{background:radial-gradient(circle,#111 18%,#c9c9c9 20%,#f5f5f5 32%,#9a9a9a 46%,#d8d8d8 58%,#6b6b6b 72%,#3a3a3a 74%);box-shadow:0 3px 6px #0007}
+.skin2d .bnc::after{display:none}
+.skin2d .gen{background:linear-gradient(var(--gen-2),var(--gen));border-radius:12px;box-shadow:0 14px 26px -12px #0008,0 1px 0 #fff2 inset}
+.skin2d .gen-disp{background:#071410;border-radius:6px;box-shadow:0 0 0 3px #15191b,0 1px 3px #000 inset;text-shadow:0 0 6px #58f0c880}
+.skin2d .gen-disp::after{display:none}
+.skin2d .key{background:linear-gradient(#5a6166,#41474b);box-shadow:0 2px 0 #1b1e20,0 3px 4px #0006}
+.skin2d .key:active,.skin2d .key.on{transform:translateY(1.5px);box-shadow:0 0.5px 0 #1b1e20}
+.skin2d .key.on{background:linear-gradient(#2c8a68,#1f6a50)}
+
+/* 连接线 */
+.cables{position:absolute;left:0;top:0;width:1180px;height:910px;pointer-events:none;overflow:visible;z-index:4;transform:translateZ(3px)}
+.hlbox{transform:translateZ(4px)}
+
+/* ---------- 侧栏 ---------- */
+.side{position:sticky;top:12px;max-height:calc(100vh - 24px);display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:12px;min-width:0;overflow:hidden}
+@media (max-width:999px){.side{position:static;max-height:none}}
+.tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto;flex:none}
+.tabs button{flex:1 0 auto;border:0;background:none;padding:10px 12px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.pane{padding:14px 16px 18px;overflow-y:auto;min-height:0;flex:1}
+.pane h3{font:600 17px/1.3 var(--font-ui);margin:0 0 8px;text-wrap:balance}
+.pane h4{font:600 14px/1.3 var(--font-ui);margin:16px 0 6px}
+.pane p{margin:0 0 10px}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.eyebrow{font:600 11px/1 var(--font-ui);letter-spacing:.1em;color:var(--accent);text-transform:uppercase;margin-bottom:6px}
+.formula{font-family:var(--font-mono);background:var(--card2);border-radius:6px;padding:6px 10px;margin:6px 0 10px;font-size:13px;overflow-x:auto;white-space:nowrap}
+
+.lessons{display:flex;flex-direction:column;gap:6px}
+.lesson-item{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;text-align:left;background:var(--card2);border:1px solid transparent;border-radius:8px;padding:9px 10px;cursor:pointer}
+.lesson-item:hover{border-color:var(--accent)}
+.lesson-item .no{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);font:600 12px var(--font-mono)}
+.lesson-item.done .no{background:var(--ok);color:#fff;border-color:var(--ok)}
+.lesson-item .t{font-weight:600;line-height:1.3}
+.lesson-item .d{font-size:12px;color:var(--muted);line-height:1.35;margin-top:2px}
+.lesson-item .st{font-size:12px;color:var(--muted)}
+
+.step-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dots{display:flex;gap:4px;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dots i.done{background:var(--ok)}
+.dots i.cur{background:var(--hl)}
+.step-card{background:var(--card2);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.step-card .do{font-size:15px;font-weight:500}
+.step-card .state{margin-top:8px;font-size:12.5px;display:flex;align-items:center;gap:6px}
+.pill{display:inline-block;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:600}
+.pill.wait{background:#ff9d2e26;color:var(--warn)}
+.pill.ok{background:#1d7a4626;color:var(--ok)}
+.why{border-left:3px solid var(--accent);padding:6px 10px;margin:10px 0;background:var(--card);border-radius:0 6px 6px 0}
+.why b{color:var(--accent)}
+.checklist{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:3px;font-size:13px}
+.checklist li::before{content:"○ ";color:var(--muted)}
+.checklist li.ok::before{content:"● ";color:var(--ok)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.inp{display:inline-flex;align-items:center;gap:4px;font-size:13px}
+.inp input{width:74px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);font:13px var(--font-mono)}
+.result{margin-top:8px;font-size:13px;padding:8px 10px;border-radius:8px;background:var(--card)}
+.result.good{border:1px solid var(--ok)}
+.result.bad{border:1px solid var(--bad)}
+.good-t{color:var(--ok);font-weight:600}
+.bad-t{color:var(--bad);font-weight:600}
+
+.qa{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--card)}
+.qa summary{cursor:pointer;padding:9px 12px;font-weight:500;list-style:none}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::before{content:"Q ";color:var(--accent);font-weight:700;font-family:var(--font-mono)}
+.qa div{padding:0 12px 10px;color:var(--fg)}
+.qa[open] summary{border-bottom:1px dashed var(--line)}
+
+.rec-table{overflow-x:auto;margin:6px 0 12px}
+.rec-table table{border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;min-width:100%}
+.rec-table th,.rec-table td{border:1px solid var(--line);padding:3px 5px;text-align:center;white-space:nowrap}
+.rec-table th{background:var(--card2);font-weight:600}
+.rec-table input{width:52px;border:0;background:transparent;color:var(--fg);font:12.5px var(--font-mono);text-align:center}
+.rec-table td.calc{color:var(--accent);font-family:var(--font-mono)}
+
+.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gallery figure{margin:0;cursor:pointer;background:#000;border-radius:6px;overflow:hidden}
+.gallery img{display:block;width:100%}
+.gallery figcaption{font-size:11.5px;color:#cfd8d3;padding:3px 6px;background:#111}
+
+.diag li{margin-bottom:6px}
+.principle canvas{width:100%;max-width:356px;height:auto;display:block;background:#0b1410;border-radius:8px}
+
+/* 拖旋钮时 */
+body.knob-drag,body.knob-drag *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}
+.ctl.dragging{z-index:7}
+/* 填表时的照片查看器 */
+.pv{margin:10px 0 4px;background:#000;border-radius:8px;overflow:hidden}
+.pv img{display:block;width:100%;cursor:zoom-in}
+.pv-bar{display:flex;align-items:center;gap:6px;padding:5px 6px;background:#111;color:#cfd8d3;font-size:12px}
+.pv-bar span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv-bar button{border:1px solid #3a4440;background:#1d2522;color:#e6efea;border-radius:6px;padding:2px 9px;cursor:pointer;font-size:12.5px}
+.pv-bar button:disabled{opacity:.35;cursor:default}
+.pv-empty{margin:10px 0 4px;padding:10px;border:1px dashed var(--line);border-radius:8px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.saved-tip{font-size:11.5px;color:var(--muted);margin-top:4px}
+/* 记录 */
+.tbtn.rec{border-color:var(--warn);color:var(--warn);font-weight:600}
+.tbtn.qbtn{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:600}
+.tbtn.qbtn:hover{filter:brightness(1.1)}
+.note-form label.tag{display:inline-flex;align-items:center;gap:4px;margin:0 10px 6px 0;cursor:pointer}
+.note-form textarea{width:100%;min-height:76px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:13.5px/1.5 var(--font-ui);padding:8px 10px;resize:vertical}
+.note-form pre,.note-card pre{white-space:pre-wrap;font:12px/1.55 var(--font-mono);background:var(--card2);border-radius:8px;padding:8px 10px;margin:8px 0;max-height:220px;overflow:auto}
+.note-card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:var(--card)}
+.note-card .head{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:12.5px;color:var(--muted)}
+.note-card .txt{margin:6px 0 4px;font-size:14px}
+.note-card img{display:block;width:100%;border-radius:6px;margin-top:6px;cursor:zoom-in}
+.pill.tag-no{background:#b0302c22;color:var(--bad)}
+.pill.tag-q{background:#ff9d2e26;color:var(--warn)}
+.pill.tag-x{background:#2c64b822;color:#3d7bd0}
+.export-box textarea{width:100%;min-height:160px;font:12px var(--font-mono);border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--fg);padding:8px}
+
+/* 撤回、禁区、失败 */
+.tbtn:disabled{opacity:.45;cursor:default}
+.lock{margin-top:8px;font-size:12.5px;color:var(--warn);background:#ff9d2e1a;border-radius:6px;padding:5px 8px}
+.lock b{font-weight:600}
+.fail{border:2px solid var(--bad);background:#b0302c14;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.fail h4{margin:0 0 4px;color:var(--bad);font-size:15px}
+.fail p{margin:0 0 8px;font-size:13.5px}
+.fail .row{margin-top:4px}
+.dots i.fail{background:var(--bad)}
+.tbtn.ghost{border-style:dashed;color:var(--muted);font-size:12.5px}
+
+/* 说明书 */
+.help{width:min(820px,100%);padding:0!important}
+.help-head{position:sticky;top:0;display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);z-index:1}
+.help-head h3{margin:0;font-size:18px;margin-right:auto}
+.help-body{padding:6px 22px 22px;max-width:72ch;line-height:1.7}
+.help-body h4{font-size:15.5px;margin:20px 0 6px}
+.help-body ul{margin:0 0 8px;padding-left:1.3em}
+.help-body li{margin:2px 0}
+.help-body kbd{font:12px var(--font-mono);border:1px solid var(--line);border-radius:4px;padding:0 4px;background:var(--card2)}
+.help-body .k{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:0 6px;font-size:12.5px;background:var(--card2);white-space:nowrap}
+.help-toc{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.help-toc a{font-size:12.5px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:2px 10px}
+
+/* 浮层 */
+.tip{position:fixed;z-index:50;max-width:280px;background:#111a16f2;color:#e9f1ec;border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.45;pointer-events:none;box-shadow:0 6px 18px #0006}
+.tip b{font-family:var(--font-panel);font-size:14px;letter-spacing:.04em}
+.tip .v{font-family:var(--font-mono);color:#7ef2b5;margin-left:6px}
+.tip .dsc{margin-top:4px;color:#c7d3cc}
+.menu{position:fixed;z-index:60;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px #0005;padding:6px;min-width:190px}
+.menu .mh{font-size:12px;color:var(--muted);padding:4px 8px 6px}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:6px;cursor:pointer}
+.menu button:hover{background:var(--card2)}
+.menu button.cur{color:var(--accent);font-weight:600}
+.modal{position:fixed;inset:0;z-index:70;background:#000a;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal .box{background:var(--card);color:var(--fg);border-radius:12px;max-width:min(760px,100%);max-height:100%;overflow:auto;padding:16px}
+.modal img{display:block;max-width:100%;border-radius:6px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:80;background:#14201b;color:#eaf3ee;padding:10px 16px;border-radius:10px;box-shadow:0 8px 24px #0006;max-width:min(560px,calc(100% - 32px));font-size:13.5px}
+.toast.warn{background:#5b2a10}
+</style>
+
+<header class="top">
+  <!--PLATFORM-BACK--><div class="brand"><b>示波器模拟台（v1.0）</b><span>大学物理实验十一 · 示波器原理及使用 · 照 GOS-630FC 面板复刻</span></div>
+  <div class="modes" role="tablist" aria-label="模式">
+    <button id="modeTeach" class="on" role="tab">教学模式</button>
+    <button id="modeSim" role="tab">仿真模式</button>
+  </div>
+  <button class="tbtn" id="btnView" type="button">视角：立体</button>
+  <button class="tbtn" id="btnSound" type="button">声音：开</button>
+  <button class="tbtn" id="btnDiag" type="button">屏幕为什么是这样？</button>
+  <button class="tbtn" id="btnHelp" type="button">说明</button>
+  <button class="tbtn" id="btnUndo" type="button" title="撤回上一个操作（⌘Z / Ctrl+Z；重做 ⌘⇧Z）" disabled>撤回</button>
+  <button class="tbtn rec" id="btnNote" type="button" title="把现在的面板、屏幕和这一步记下来，标记不会或有疑问">记录</button>
+  <button class="tbtn primary" id="btnPhoto" type="button">拍照</button>
+</header>
+
+<main class="layout">
+  <section class="bench">
+    <div class="stage-wrap" id="stageWrap">
+      <div class="stage" id="stage"><div class="room"></div><div class="rig" id="rig"><div class="table"></div><div class="plane" id="plane">
+        <div class="scope" id="scope">
+          <div class="brandplate">GOS-630FC<small>双轨迹示波器 · 教学复刻</small></div>
+          <div class="crt-bezel"><div class="crt-glass" id="glass"><canvas id="crt"></canvas><canvas id="crtGlow" class="glow"></canvas><svg id="grat" viewBox="0 0 460 380"></svg><div class="sheen"></div></div></div>
+          <div class="lcd off" id="lcd"><span class="mag" id="lcdMag"></span><span id="lcdTL">1ms</span><span class="r" id="lcdTR">- - - - -</span><span id="lcdBL">CH1 1V</span><span class="r" id="lcdBR">CH2 1V</span></div>
+        </div>
+        <div class="gen" id="genA" style="left:0;width:650px"></div>
+        <div class="gen" id="genB" style="left:670px;width:510px"></div>
+        <svg class="cables" id="cables"></svg>
+      </div></div></div>
+    </div>
+    <p class="bench-hint">旋钮：<b>按住</b>后往右（或往上）拖是顺时针，往左（或往下）是逆时针，松开就停；按住 <kbd>Shift</kbd> 拖是微调。也可以点一下旋钮再按方向键。拨动开关：按住拨杆上下拖，或者点旁边的字。插座：点一下选择接哪根线。鼠标停在部件上（平板上按住部件）会显示它是什么。</p>
+  </section>
+
+  <aside class="side" id="side">
+    <nav class="tabs" id="tabs"></nav>
+    <div class="pane" id="pane"></div>
+  </aside>
+</main>
+
+<div id="tip" class="tip" hidden></div>
+<div id="menu" class="menu" hidden></div>
+<div id="modal" class="modal" hidden></div>
+<div id="toast" class="toast" hidden></div>
