@@ -79,6 +79,14 @@ details.src > div{padding:0 14px 12px}
 .qa .a .more{color:var(--muted);font-size:15px;margin-top:4px}
 .qa .src-tag{font-size:12px;color:var(--muted);font-weight:400}
 
+.search{position:relative;margin:16px 0 4px}
+.search svg{position:absolute;left:12px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search input{width:100%;font:16px/1.4 var(--font-ui);color:var(--fg);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:11px 40px 11px 38px;-webkit-appearance:none;appearance:none}
+.search input:focus{outline:none;border-color:var(--accent)}
+.search input::-webkit-search-cancel-button{display:none}
+.search .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;border-radius:8px}
+.hits{color:var(--muted);font-size:14px;margin:6px 2px 0;min-height:1.4em}
+mark{background:#ffe27a;color:#18201d;border-radius:3px;padding:0 1px}
 [hidden]{display:none!important}
 footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 </style>
@@ -99,7 +107,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:v
 
 <!-- ================= 现场步骤 ================= -->
 <section id="steps" role="tabpanel" aria-labelledby="tab-steps">
-  <p class="lead">忘了怎么做就从头往下看。旋钮名称就是 GOS-630FC 面板上印的英文。整个实验只有 3 种操作：看波形数格子、X-Y 模式拍李萨如图形、ADD 模式拍「拍」。</p>
+  <p class="lead">忘了怎么做就从头往下看。按教材第 97～100 页「实验仪器」「实验内容」核对过，旋钮名称就是 GOS-630FC 面板上印的英文。整个实验只有 3 种操作：看波形数格子、X-Y 模式拍李萨如图形、ADD 模式拍「拍」。</p>
 
   <div class="box warn"><b>进门前确认：</b>预习测试题已经通过（没通过刷脸签不了到）；带了预习报告和教材；手机有电，要拍很多照片。</div>
 
@@ -111,6 +119,7 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:v
     <table class="tbl">
       <tr><td><span class="k">INTEN</span> <span class="k">FOCUS</span></td><td>中间</td><td>先能看见，再细调</td></tr>
       <tr><td>两个 <span class="k">POSITION</span></td><td>中间</td><td>线出现在屏幕中央</td></tr>
+      <tr><td><span class="k">LEVEL</span> <span class="k">TIME/DIV</span> CH1 <span class="k">VOLTS/DIV</span></td><td>中间</td><td>教材要求预置到中间</td></tr>
       <tr><td>TRIGGER <span class="k">MODE</span></td><td><b>AUTO</b></td><td>没信号也有扫描线</td></tr>
       <tr><td><span class="k">SOURCE</span></td><td><b>CH1</b></td><td>按 CH1 的信号触发</td></tr>
       <tr><td>VERT <span class="k">MODE</span></td><td><b>CH1</b></td><td>只显示通道 1</td></tr>
@@ -129,6 +138,12 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:v
     <li><b>信号源出正弦波 1 kHz</b>，确认 output on 的灯亮着（不亮就没有输出），用线接到 <span class="k">CH1</span>。各型号怎么设频率见下面「信号源怎么设频率」。</li>
     <li><b>把波形调稳</b>：先拧 <span class="k">TIME/DIV</span>，屏上留 2～3 个完整的波；再拧 <span class="k">LEVEL</span>，直到波形停住。</li>
     <li><b>把波形调大</b>：拧 <span class="k">VOLTS/DIV</span>，让波形尽量高，但别超出屏幕。</li>
+    <li><b>顺手做完教材要求的观察</b>（第 1 项）：
+      <ul>
+        <li><span class="k">TIME/DIV</span> 从快档逐档拧到慢档，看波形怎么变；看完拧回 2～3 个波。</li>
+        <li>拧一下 <span class="k">VAR</span> 看波高变化，<b>看完拧回 CAL</b>。</li>
+        <li>按一下 <span class="k">×10 MAG</span> 看扩展效果，<b>看完弹起来</b>。</li>
+      </ul></li>
     <li><b>数格子、记数</b>：
       <ul>
         <li>用上下 POSITION 把波谷压到一条横格线上。</li>
@@ -136,12 +151,13 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:v
         <li><b>c</b> 个完整周期占几格记 <b>d</b>，小屏上的 TIME/DIV 读数记 <b>e</b>。</li>
         <li><b>拍照：大屏和小液晶屏拍进同一张。</b></li>
       </ul></li>
-    <li><b>再测 3 组</b>：换 100 Hz、换三角波，按第 3～5 步重做，凑齐表 1 的 4 行。</li>
+    <li><b>再测 3 组</b>：换 100 Hz、换三角波，按第 3、4、6 步重做，凑齐表 1 的 4 行（1 kHz、100 Hz 各一个三角波、一个正弦波）。</li>
     <li><b>标准方波修正</b>：
       <ul>
         <li><b>档位都别动</b>，把输入线从信号源拔下来，插到示波器的 <span class="k">CAL</span> 端子上。</li>
         <li>看一眼 CAL 旁边印的是 1V 还是 2V，拍下来。</li>
         <li>方波峰-峰值几格记 <b>f</b>，一个周期几格记 <b>g</b>。</li>
+        <li>课后修正：U = a/f，T = 0.001·d/(c·g)。教材这个公式按方波 1 V 写；第 98 页又写 CAL 是 2 Vp-p，端子上印的是 2V 的话问一下老师怎么算。</li>
       </ul></li>
     <li><b>测直流分量</b>（三角波、正弦波各一次）：
       <ul>
@@ -156,13 +172,13 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:v
   <p class="lead">对应实验内容 6～7，填表 2、表 3。</p>
   <ol>
     <li>两路信号分别接 <span class="k">CH1</span>、<span class="k">CH2</span>：一路是频率已知的信号源，一路当待测信号。YB1602 那台频率不太稳，适合当待测信号。</li>
-    <li>VERT MODE 拨 <b>DUAL</b>，确认两路波形都有。</li>
+    <li>VERT MODE 拨 <b>DUAL</b>，确认两路波形都有；调信号源频率，让 CH1、CH2 两个波形的<b>周期数大致相同</b>。</li>
     <li><span class="k">TIME/DIV</span> <b>逆时针拧到头</b>，进入 X-Y 模式（CH1 是 X，CH2 是 Y）。</li>
     <li><b>测频率</b>：慢慢拧已知信号源的频率，依次调出 <b>1:1、2:3、1:3</b>。每种拍一张照片，记下当时的已知频率。
       <ul><li>图形慢慢转、变形是正常的，等它转成闭合、凸包清楚的样子再拍。</li></ul></li>
     <li><b>测相位差</b>：两路设成同一频率，屏上出现椭圆，拍照。</li>
   </ol>
-  <p class="lead">切点数和椭圆的 a、b 可以课后对着照片数，现场只管拍清楚。</p>
+  <p class="lead">切点数和椭圆的 a、b 可以课后对着照片数，现场只管拍清楚。教材要求课后求出 5 个 f<sub>y</sub> 取平均，但只点名了 1:1、2:3、1:3 三种；时间够就多调两组拍下来，要几组以老师说的为准。</p>
 
   <h2>操作三：ADD 模式，拍频法</h2>
   <p class="lead">对应实验内容 8，填表 4。</p>
@@ -201,19 +217,25 @@ footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:v
 
 <!-- ================= 可能被问 ================= -->
 <section id="qa" role="tabpanel" aria-labelledby="tab-qa" hidden>
+  <div class="search" role="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input id="q" type="search" placeholder="搜关键词，如：李萨如、触发、直流" autocomplete="off" enterkeyhint="search" aria-label="搜索题目和答案">
+    <button class="clear" id="clearQ" type="button" aria-label="清空搜索" hidden>×</button>
+  </div>
+  <p class="hits" id="hits" aria-live="polite"></p>
   <div class="qa-tools">
     <p>先自己想，再点开看答案。绿字是一句话版本，背这个就够。</p>
     <button class="btn" id="toggleAll" type="button">全部展开</button>
   </div>
   <p class="lead">按教材的预习思考题、课后思考题和操作要点整理。老师具体怎么问没有统一规定，以现场为准。</p>
 
-  <h2>预习思考题（教材第 92 页）</h2>
+  <h2 data-for="pre">预习思考题（教材第 92 页）</h2>
   <div id="qa-pre"></div>
 
-  <h2>课后思考题（教材第 100 页）</h2>
+  <h2 data-for="after">课后思考题（教材第 100 页）</h2>
   <div id="qa-after"></div>
 
-  <h2>现场操作常问</h2>
+  <h2 data-for="op">现场操作常问</h2>
   <div id="qa-op"></div>
 </section>
 
@@ -238,10 +260,10 @@ const QA = {
   after: [
     ['扫描频率远大于或远小于信号频率时，屏上什么样？', '扫太快只看到一小段，接近一条线；扫太慢一屏挤满很多周期，连成一片亮带。', '把 TIME/DIV 拧到两头就能看到。'],
     ['正弦波一直往左或往右跑，为什么？调哪几个旋钮？', '没同步：扫描周期稍大于信号周期整数倍就往左跑，稍小就往右跑。先调 TIME/DIV，再调 LEVEL。', '必要时用 SWP.VAR 微调扫描，最后靠 LEVEL 让触发把波形锁住。'],
-    ['X、Y 两路频率相等，椭圆为什么还在转？', '两台独立的信号源频率不可能严格相等，相位差在慢慢变，图形就跟着变。', '频率差越小，转得越慢。'],
+    ['观察李萨如图形时，X、Y 两路频率相等，椭圆为什么还在转？', '两台独立的信号源频率不可能严格相等，相位差在慢慢变，图形就跟着变。', '频率差越小，转得越慢。'],
   ],
   op: [
-    ['读数前为什么一定要把 VAR、SWP.VAR 拧到 CAL？', '不在 CAL 时，每格实际代表的值就不是小屏上显示的读数，量出来全错。', 'VAR 是 VOLTS/DIV 的微调，SWP.VAR 是 TIME/DIV 的微调，只有顺时针到头（CAL）时读数才是标定过的。'],
+    ['读数前为什么一定要把 VAR、SWP.VAR 拧到 CAL？', '不在 CAL 时，每格实际代表的值就不是小屏上显示的读数，量出来全错。', 'VAR 是 VOLTS/DIV 的微调，SWP.VAR 是 TIME/DIV 的微调，只有顺时针到头（CAL）时读数才是标定过的。教材第 97 页写明：微调时小屏上的读数不跟着变。'],
     ['为什么要用 CAL 标准方波修正？', '示波器本身有误差；标准方波的幅度和频率是准确已知的，同一档位下量它占几格，就能把误差修掉。', '所以修正时档位一个都不能动，动了 f、g 就和前面测的 a、d 对不上了。'],
     ['调稳波形为什么先拧 TIME/DIV、再拧 LEVEL？', 'TIME/DIV 先把扫描调到大致合适，屏上留 2～3 个波；LEVEL 再让触发把它锁住。', '这是实验室注意要点里写的顺序。'],
     ['AC、GND、DC 三档分别是什么？', 'AC 只看交流部分，DC 交流直流一起看，GND 把输入接地、显示零线。', '测直流分量就是靠这三档配合。'],
@@ -255,12 +277,43 @@ const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 let n = 0;
 for (const [key, list] of Object.entries(QA)) {
   document.getElementById('qa-' + key).innerHTML = list.map(([q, one, more]) =>
-    `<details class="qa"><summary><span class="n">${++n}</span><span>${esc(q)}</span></summary>` +
+    `<details class="qa"><summary><span class="n">${++n}</span><span class="t">${esc(q)}</span></summary>` +
     `<div class="a"><div class="one">${esc(one)}</div><div class="more">${esc(more)}</div></div></details>`).join('');
 }
 
+// 搜索：空格隔开的每个词都要出现在题目或答案里；命中的题自动展开、关键词标黄
+const qInput = document.getElementById('q'), hits = document.getElementById('hits'), clearQ = document.getElementById('clearQ');
+const raw = new Map();
+document.querySelectorAll('.qa .t, .qa .one, .qa .more').forEach(el => raw.set(el, el.textContent));
+const mark = (text, terms) => {
+  const re = new RegExp('(' + terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).sort((a, b) => b.length - a.length).join('|') + ')', 'gi');
+  return text.split(re).map((part, i) => i % 2 ? `<mark>${esc(part)}</mark>` : esc(part)).join('');
+};
+const search = () => {
+  const terms = qInput.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  clearQ.hidden = !terms.length;
+  let count = 0;
+  for (const d of document.querySelectorAll('.qa')) {
+    const parts = [...d.querySelectorAll('.t, .one, .more')];
+    const hay = parts.map(el => raw.get(el)).join(' ').toLowerCase();
+    const ok = terms.every(t => hay.includes(t));
+    d.hidden = !ok;
+    parts.forEach(el => { el.innerHTML = terms.length && ok ? mark(raw.get(el), terms) : esc(raw.get(el)); });
+    if (terms.length) d.open = ok;
+    if (ok) count++;
+  }
+  for (const h of document.querySelectorAll('#qa h2[data-for]'))
+    h.hidden = ![...document.querySelectorAll(`#qa-${h.dataset.for} .qa`)].some(d => !d.hidden);
+  hits.textContent = !terms.length ? '' : count ? `找到 ${count} 题，答案已展开` : '没找到，换个词试试，比如只打两个字';
+  if (!terms.length) document.querySelectorAll('.qa').forEach(d => { d.open = false; });
+  syncToggle();
+};
+qInput.addEventListener('input', search);
+qInput.addEventListener('keydown', e => { if (e.key === 'Enter') qInput.blur(); if (e.key === 'Escape') { qInput.value = ''; search(); } });
+clearQ.onclick = () => { qInput.value = ''; search(); qInput.focus(); };
+
 // 全部展开 / 全部收起
-const allQa = () => [...document.querySelectorAll('.qa')];
+const allQa = () => [...document.querySelectorAll('.qa')].filter(d => !d.hidden);
 const toggleBtn = document.getElementById('toggleAll');
 const syncToggle = () => { toggleBtn.textContent = allQa().every(d => d.open) ? '全部收起' : '全部展开'; };
 toggleBtn.onclick = () => { const open = !allQa().every(d => d.open); allQa().forEach(d => { d.open = open; }); syncToggle(); };
