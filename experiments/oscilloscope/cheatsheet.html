@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>示波器上课小抄</title>
+<meta name="description" content="示波器实验上课时用手机看：现场一步步怎么做，以及可能被问到的原理题和一句话答案。">
+<!--PWA-HEAD-->
+<style>
+/* 布局：手机优先的单列。顶栏（返回 + 标题）→ 两个标签页「现场步骤」「可能被问」→ 各自内容。颜色与引导页同一套 */
+:root{
+  --bg:#e4e8e5; --fg:#18201d; --muted:#5a6661; --line:#c5ccc8; --card:#f4f6f4; --card2:#eaeeeb;
+  --accent:#17734f; --accent-ink:#fff; --warn:#a4481c; --warn-bg:#f6e6dc;
+  --font-ui:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-mono:"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121715; --fg:#e2e8e4; --muted:#93a19a; --line:#2c3632; --card:#1a201e; --card2:#212926; --accent:#43c98e; --accent-ink:#06150e;
+  --warn:#f0a77c; --warn-bg:#2e211a; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121715; --fg:#e2e8e4; --muted:#93a19a; --line:#2c3632; --card:#1a201e; --card2:#212926; --accent:#43c98e; --accent-ink:#06150e;
+  --warn:#f0a77c; --warn-bg:#2e211a; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{margin:0;font:16px/1.7 var(--font-ui);padding:0 16px 48px;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+b,strong{font-weight:700}
+.k{font:600 .92em/1 var(--font-mono);background:var(--card2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;white-space:nowrap}
+
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--line);margin:0 -16px;padding-inline:16px}
+.top-row{display:flex;align-items:center;gap:12px;max-width:720px;margin:0 auto}
+.back{font-size:14px;color:var(--muted);text-decoration:none;padding:6px 0;white-space:nowrap}
+.top h1{font:700 18px/1.3 var(--font-ui);margin:0;flex:1}
+.tabs{display:flex;gap:6px;max-width:720px;margin:8px auto 0}
+.tab{flex:1;font:600 15px/1 var(--font-ui);color:var(--muted);background:none;border:0;border-bottom:3px solid transparent;padding:10px 4px 11px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+
+.lead{color:var(--muted);font-size:14px;margin:16px 0 4px}
+h2{font:700 18px/1.35 var(--font-ui);margin:30px 0 10px;padding-left:10px;border-left:4px solid var(--accent)}
+h3{font:700 16px/1.4 var(--font-ui);margin:20px 0 6px}
+ol,ul{padding-left:1.4em;margin:6px 0}
+li{margin:5px 0}
+li ul{margin:2px 0}
+li ul li{color:var(--muted);font-size:15px;margin:2px 0}
+p{margin:6px 0}
+
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.warn{background:var(--warn-bg);border-color:transparent;color:var(--fg)}
+.warn b{color:var(--warn)}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td:first-child{white-space:nowrap;padding-right:10px}
+.tbl td:last-child{color:var(--muted);font-size:14px}
+
+details.src{margin:10px 0;background:var(--card);border:1px solid var(--line);border-radius:12px}
+details.src summary{padding:11px 14px;font-weight:600;cursor:pointer}
+details.src > div{padding:0 14px 12px}
+
+.check{list-style:none;padding:0}
+.check li{margin:0;border-bottom:1px solid var(--line)}
+.check li:last-child{border-bottom:0}
+.check label{display:flex;gap:10px;align-items:flex-start;padding:9px 0;cursor:pointer}
+.check input{width:20px;height:20px;margin-top:3px;flex:none;accent-color:var(--accent)}
+.check input:checked + span{color:var(--muted);text-decoration:line-through}
+
+.qa-tools{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 4px}
+.qa-tools p{margin:0;color:var(--muted);font-size:14px}
+.btn{font:600 14px/1 var(--font-ui);color:var(--accent);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:pointer;white-space:nowrap}
+.qa{border:1px solid var(--line);background:var(--card);border-radius:12px;margin:10px 0}
+.qa summary{list-style:none;display:flex;gap:10px;padding:12px 14px;cursor:pointer;font-weight:600}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary .n{flex:none;font:600 13px/1.9 var(--font-mono);color:var(--accent);min-width:1.6em}
+.qa summary::after{content:"看答案";margin-left:auto;flex:none;font-size:12px;font-weight:500;color:var(--muted);align-self:center}
+.qa[open] summary::after{content:"收起"}
+.qa .a{padding:0 14px 13px calc(14px + 1.6em + 10px)}
+.qa .a .one{font-weight:700;color:var(--accent)}
+.qa .a .more{color:var(--muted);font-size:15px;margin-top:4px}
+.qa .src-tag{font-size:12px;color:var(--muted);font-weight:400}
+
+[hidden]{display:none!important}
+footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="top-row">
+    <a class="back" href="/">← 实验列表</a>
+    <h1>示波器 · 上课小抄</h1>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-steps" aria-controls="steps" aria-selected="true" type="button">现场步骤</button>
+    <button class="tab" role="tab" id="tab-qa" aria-controls="qa" aria-selected="false" type="button">可能被问</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ================= 现场步骤 ================= -->
+<section id="steps" role="tabpanel" aria-labelledby="tab-steps">
+  <p class="lead">忘了怎么做就从头往下看。旋钮名称就是 GOS-630FC 面板上印的英文。整个实验只有 3 种操作：看波形数格子、X-Y 模式拍李萨如图形、ADD 模式拍「拍」。</p>
+
+  <div class="box warn"><b>进门前确认：</b>预习测试题已经通过（没通过刷脸签不了到）；带了预习报告和教材；手机有电，要拍很多照片。</div>
+
+  <h2>操作一：看波形、数格子</h2>
+  <p class="lead">对应教材实验内容 1～5，填表 1。</p>
+
+  <h3>开机前，旋钮先放到这里</h3>
+  <div class="box">
+    <table class="tbl">
+      <tr><td><span class="k">INTEN</span> <span class="k">FOCUS</span></td><td>中间</td><td>先能看见，再细调</td></tr>
+      <tr><td>两个 <span class="k">POSITION</span></td><td>中间</td><td>线出现在屏幕中央</td></tr>
+      <tr><td>TRIGGER <span class="k">MODE</span></td><td><b>AUTO</b></td><td>没信号也有扫描线</td></tr>
+      <tr><td><span class="k">SOURCE</span></td><td><b>CH1</b></td><td>按 CH1 的信号触发</td></tr>
+      <tr><td>VERT <span class="k">MODE</span></td><td><b>CH1</b></td><td>只显示通道 1</td></tr>
+      <tr><td>CH1 <span class="k">AC-GND-DC</span></td><td>AC</td><td>先看交流部分</td></tr>
+      <tr><td><span class="k">VAR</span> <span class="k">SWP.VAR</span></td><td><b>顺时针到头（CAL）</b></td><td>不在 CAL，读数就不准</td></tr>
+    </table>
+  </div>
+
+  <h3>步骤</h3>
+  <ol>
+    <li><b>开机</b>：按 <span class="k">POWER</span>，等一会儿，屏上出现一条横线。
+      <ul>
+        <li>没有线：调大 <span class="k">INTEN</span>，把 <span class="k">POSITION</span> 往回拧，确认 TRIGGER MODE 在 AUTO。</li>
+        <li>线太粗：调 <span class="k">FOCUS</span>。</li>
+      </ul></li>
+    <li><b>信号源出正弦波 1 kHz</b>，确认 output on 的灯亮着（不亮就没有输出），用线接到 <span class="k">CH1</span>。各型号怎么设频率见下面「信号源怎么设频率」。</li>
+    <li><b>把波形调稳</b>：先拧 <span class="k">TIME/DIV</span>，屏上留 2～3 个完整的波；再拧 <span class="k">LEVEL</span>，直到波形停住。</li>
+    <li><b>把波形调大</b>：拧 <span class="k">VOLTS/DIV</span>，让波形尽量高，但别超出屏幕。</li>
+    <li><b>数格子、记数</b>：
+      <ul>
+        <li>用上下 POSITION 把波谷压到一条横格线上。</li>
+        <li>波峰到波谷几格记 <b>a</b>，小屏上的 VOLTS/DIV 读数记 <b>b</b>。</li>
+        <li><b>c</b> 个完整周期占几格记 <b>d</b>，小屏上的 TIME/DIV 读数记 <b>e</b>。</li>
+        <li><b>拍照：大屏和小液晶屏拍进同一张。</b></li>
+      </ul></li>
+    <li><b>再测 3 组</b>：换 100 Hz、换三角波，按第 3～5 步重做，凑齐表 1 的 4 行。</li>
+    <li><b>标准方波修正</b>：
+      <ul>
+        <li><b>档位都别动</b>，把输入线从信号源拔下来，插到示波器的 <span class="k">CAL</span> 端子上。</li>
+        <li>看一眼 CAL 旁边印的是 1V 还是 2V，拍下来。</li>
+        <li>方波峰-峰值几格记 <b>f</b>，一个周期几格记 <b>g</b>。</li>
+      </ul></li>
+    <li><b>测直流分量</b>（三角波、正弦波各一次）：
+      <ul>
+        <li>拨 <b>GND</b>：屏上变成一条线，用 POSITION 对到中间那条格线，这是零线。</li>
+        <li>拨 <b>AC</b>：记波谷在第几格。</li>
+        <li>拨 <b>DC</b>：再记波谷在第几格。</li>
+        <li>两次位置差 × VOLTS/DIV = 直流分量。</li>
+      </ul></li>
+  </ol>
+
+  <h2>操作二：X-Y 模式，李萨如图形</h2>
+  <p class="lead">对应实验内容 6～7，填表 2、表 3。</p>
+  <ol>
+    <li>两路信号分别接 <span class="k">CH1</span>、<span class="k">CH2</span>：一路是频率已知的信号源，一路当待测信号。YB1602 那台频率不太稳，适合当待测信号。</li>
+    <li>VERT MODE 拨 <b>DUAL</b>，确认两路波形都有。</li>
+    <li><span class="k">TIME/DIV</span> <b>逆时针拧到头</b>，进入 X-Y 模式（CH1 是 X，CH2 是 Y）。</li>
+    <li><b>测频率</b>：慢慢拧已知信号源的频率，依次调出 <b>1:1、2:3、1:3</b>。每种拍一张照片，记下当时的已知频率。
+      <ul><li>图形慢慢转、变形是正常的，等它转成闭合、凸包清楚的样子再拍。</li></ul></li>
+    <li><b>测相位差</b>：两路设成同一频率，屏上出现椭圆，拍照。</li>
+  </ol>
+  <p class="lead">切点数和椭圆的 a、b 可以课后对着照片数，现场只管拍清楚。</p>
+
+  <h2>操作三：ADD 模式，拍频法</h2>
+  <p class="lead">对应实验内容 8，填表 4。</p>
+  <ol>
+    <li>把 <span class="k">TIME/DIV</span> 拧回来，退出 X-Y 模式。待测信号接 <span class="k">CH1</span>，可调的标准信号接 <span class="k">CH2</span>。</li>
+    <li>VERT MODE 拨 <b>CH1</b>：把待测信号调稳，从屏上估一下它的频率。</li>
+    <li>VERT MODE 拨 <b>CH2</b>：把标准信号的频率和大小都调到和待测信号差不多。</li>
+    <li>VERT MODE 拨 <b>ADD</b>，确认 <span class="k">CH2 INV</span> 没按下。调 TIME/DIV，再慢慢微调标准信号频率，直到出现稳定的「拍」：外轮廓一鼓一缩，像一串橄榄。</li>
+    <li>记一个拍的长度 <b>X1</b>（格）、标准频率 <b>f1</b>、TIME/DIV 读数。</li>
+    <li>稍微改一下标准频率，等出现另一个稳定的拍，记 <b>X2</b>、<b>f2</b>、TIME/DIV 读数。</li>
+    <li><b>拍照</b>：CH1、CH2、ADD 三种显示各一张。</li>
+  </ol>
+
+  <details class="src">
+    <summary>信号源怎么设频率（三种型号）</summary>
+    <div>
+      <p><b>SDF-1003</b>：设 100 Hz 就依次按 <span class="k">1</span> <span class="k">0</span> <span class="k">0</span> <span class="k">Shift</span> <span class="k">0</span>（Hz）。连续调用左下的 FREQUENCY 旋钮，<span class="k">Shift</span>+<span class="k">4</span>/<span class="k">5</span> 换调的是哪一位。没输出就看右侧 output on 的灯亮没亮。</p>
+      <p><b>YB3020</b>：按功能区的「频率」，输数字，再按屏幕下的蓝色按钮选单位。连续调用右上的旋钮，左右箭头换位。</p>
+      <p><b>YB1602</b>：先选档位（比如 200Hz 档），再拧「粗调」「细调」。它的频率不太稳，适合当待测信号。</p>
+    </div>
+  </details>
+
+  <h2>离开前检查</h2>
+  <ul class="check" id="leaveCheck">
+    <li><label><input type="checkbox" data-k="t1"><span>表 1 的 4 行都有数，标准方波的 f、g 也记了</span></label></li>
+    <li><label><input type="checkbox" data-k="dc"><span>直流分量：三角波、正弦波各测了一次</span></label></li>
+    <li><label><input type="checkbox" data-k="ph"><span>照片：李萨如 3 张、椭圆 1 张、拍 3 张，测量时大屏和小屏同框</span></label></li>
+    <li><label><input type="checkbox" data-k="cal"><span>CAL 端子旁印的是 1V 还是 2V，拍到了</span></label></li>
+    <li><label><input type="checkbox" data-k="off"><span>关电源，旋钮和连接线恢复原样</span></label></li>
+    <li><label><input type="checkbox" data-k="seal"><span>老师检查过数据，<b>预习章、数据章</b>两个章都有</span></label></li>
+  </ul>
+  <button class="btn" id="resetCheck" type="button">清空勾选</button>
+
+  <div class="box warn" style="margin-top:22px"><b>卡住了怎么办：</b>直接举手问老师。这很正常，最多影响一点课堂表现分；没有数据章就不算上过这次课，别空手走。</div>
+</section>
+
+<!-- ================= 可能被问 ================= -->
+<section id="qa" role="tabpanel" aria-labelledby="tab-qa" hidden>
+  <div class="qa-tools">
+    <p>先自己想，再点开看答案。绿字是一句话版本，背这个就够。</p>
+    <button class="btn" id="toggleAll" type="button">全部展开</button>
+  </div>
+  <p class="lead">按教材的预习思考题、课后思考题和操作要点整理。老师具体怎么问没有统一规定，以现场为准。</p>
+
+  <h2>预习思考题（教材第 92 页）</h2>
+  <div id="qa-pre"></div>
+
+  <h2>课后思考题（教材第 100 页）</h2>
+  <div id="qa-after"></div>
+
+  <h2>现场操作常问</h2>
+  <div id="qa-op"></div>
+</section>
+
+<footer>PhysLab · 非官方的练习工具，和教材或老师说法有出入的地方，以教材和老师为准。打开过一次之后，断网也能看。</footer>
+</main>
+
+<script>
+// 题目：[问题, 一句话答案, 展开说明]
+const QA = {
+  pre: [
+    ['开机后屏上既没扫描线也没光点，可能是什么原因？', '亮度太暗、光迹偏出屏幕、触发模式在 NORM 又没信号。', '按「电源 → 亮度（INTEN）→ 位移（POSITION）→ 触发模式（改 AUTO）」的顺序查。耦合在 GND 时只会有一条线，也顺便看一眼。'],
+    ['暂时不用示波器，是关机还是调暗？', '调暗，不关机。', '频繁开关机伤仪器，示波管重新开机还要预热。'],
+    ['为什么 X 偏转板要加锯齿波？加恒定电压行不行？', '锯齿波让光点的水平位置和时间成正比，波形才能沿时间轴展开；加恒定电压只剩一条竖线。', '锯齿波随时间线性增大，扫完一次迅速回到左边重新开始。恒定电压只会让光点停在一个水平位置，Y 方向的信号只能上下跳。'],
+    ['「同步」指什么？', '扫描周期是信号周期的整数倍（Tx = nTy），波形就稳定不跑。', '每次扫描都从波形的同一点开始，画出来的线重合在一起。'],
+    ['怎么测周期和峰-峰值？', 'VAR、SWP.VAR 先拧到 CAL；峰-峰值 = 竖直格数 × V/格，周期 = 水平格数 × s/格 ÷ 周期数。', '即 Upp = a·b，T = d·e / c，f = 1/T。正弦波有效值 U = Upp / (2√2)。'],
+    ['「触发」是什么？', '信号达到 LEVEL 设的电平、按 SLOPE 设的方向穿过时，才开始一次扫描。', '这样每次扫描都从同一点开始，触发是实现同步的手段。LEVEL 拧出波形范围就触发不了，波形会跑。'],
+    ['直流分量怎么测？', 'GND 定零线，AC、DC 各记一次波谷位置，位置差 × V/格就是直流分量。', 'AC 档有电容把直流挡掉，DC 档交流、直流一起进来，所以两档的差就是直流部分。'],
+    ['李萨如图形测频率的原理？', '两路垂直的振动频率成整数比时图形稳定封闭，Nx / Ny = fy / fx。', 'Nx 是水平切线和图形的切点数，Ny 是竖直切线的切点数。切点数之比等于频率的反比。'],
+    ['李萨如图形测相位差的原理？', '同频的两路合成椭圆，φ = arcsin(a / b)。', 'a 是椭圆在 x 轴上的截距，b 是水平方向的最大偏移。推导：x = X·sinωt，y = Y·sin(ωt + φ)，y = 0 时 x = X·sinφ。'],
+    ['拍频法怎么测未知频率？', '两个频率相近的信号相加，合振幅忽大忽小（拍），拍频 = 两频率之差。', 'f₃ = 1 / (一个拍的格数 × TIME/DIV)，待测频率 = f₁ ± f₃。把已知频率调高一点：拍变慢说明在靠近，待测频率更高，取 +；拍变快取 −。（判断加减这一步教材没写，按原理推的，老师讲了别的以老师为准。）'],
+  ],
+  after: [
+    ['扫描频率远大于或远小于信号频率时，屏上什么样？', '扫太快只看到一小段，接近一条线；扫太慢一屏挤满很多周期，连成一片亮带。', '把 TIME/DIV 拧到两头就能看到。'],
+    ['正弦波一直往左或往右跑，为什么？调哪几个旋钮？', '没同步：扫描周期稍大于信号周期整数倍就往左跑，稍小就往右跑。先调 TIME/DIV，再调 LEVEL。', '必要时用 SWP.VAR 微调扫描，最后靠 LEVEL 让触发把波形锁住。'],
+    ['X、Y 两路频率相等，椭圆为什么还在转？', '两台独立的信号源频率不可能严格相等，相位差在慢慢变，图形就跟着变。', '频率差越小，转得越慢。'],
+  ],
+  op: [
+    ['读数前为什么一定要把 VAR、SWP.VAR 拧到 CAL？', '不在 CAL 时，每格实际代表的值就不是小屏上显示的读数，量出来全错。', 'VAR 是 VOLTS/DIV 的微调，SWP.VAR 是 TIME/DIV 的微调，只有顺时针到头（CAL）时读数才是标定过的。'],
+    ['为什么要用 CAL 标准方波修正？', '示波器本身有误差；标准方波的幅度和频率是准确已知的，同一档位下量它占几格，就能把误差修掉。', '所以修正时档位一个都不能动，动了 f、g 就和前面测的 a、d 对不上了。'],
+    ['调稳波形为什么先拧 TIME/DIV、再拧 LEVEL？', 'TIME/DIV 先把扫描调到大致合适，屏上留 2～3 个波；LEVEL 再让触发把它锁住。', '这是实验室注意要点里写的顺序。'],
+    ['AC、GND、DC 三档分别是什么？', 'AC 只看交流部分，DC 交流直流一起看，GND 把输入接地、显示零线。', '测直流分量就是靠这三档配合。'],
+    ['怎么进入 X-Y 模式？哪一路是 X？', 'TIME/DIV 逆时针拧到头；CH1 是 X，CH2 是 Y。', '要退出就把 TIME/DIV 拧回来。'],
+    ['亮度为什么不能开太高，光点不能长时间停在一处？', '会灼伤荧光屏，留下暗斑。', '暂时不用时把亮度调暗。'],
+    ['示波器屏上一大格代表多少，看哪里？', '看小液晶屏上的读数：VOLTS/DIV 是每格多少伏，TIME/DIV 是每格多少时间。', '小屏上显示的分度值就是大屏一个大格代表的值。'],
+  ],
+};
+
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+let n = 0;
+for (const [key, list] of Object.entries(QA)) {
+  document.getElementById('qa-' + key).innerHTML = list.map(([q, one, more]) =>
+    `<details class="qa"><summary><span class="n">${++n}</span><span>${esc(q)}</span></summary>` +
+    `<div class="a"><div class="one">${esc(one)}</div><div class="more">${esc(more)}</div></div></details>`).join('');
+}
+
+// 全部展开 / 全部收起
+const allQa = () => [...document.querySelectorAll('.qa')];
+const toggleBtn = document.getElementById('toggleAll');
+const syncToggle = () => { toggleBtn.textContent = allQa().every(d => d.open) ? '全部收起' : '全部展开'; };
+toggleBtn.onclick = () => { const open = !allQa().every(d => d.open); allQa().forEach(d => { d.open = open; }); syncToggle(); };
+allQa().forEach(d => d.addEventListener('toggle', syncToggle));
+
+// 标签页：记在网址的 #qa 上，刷新后还停在原来那页
+const tabs = { steps: document.getElementById('tab-steps'), qa: document.getElementById('tab-qa') };
+const show = id => {
+  for (const [k, t] of Object.entries(tabs)) {
+    t.setAttribute('aria-selected', String(k === id));
+    document.getElementById(k).hidden = k !== id;
+  }
+  history.replaceState(null, '', id === 'qa' ? '#qa' : location.pathname);
+  scrollTo(0, 0);
+};
+tabs.steps.onclick = () => show('steps');
+tabs.qa.onclick = () => show('qa');
+if (location.hash === '#qa') show('qa');
+
+// 离开前检查：勾选存在本机浏览器里
+const KEY = 'physlab-osc-cheatsheet-check';
+const boxes = [...document.querySelectorAll('#leaveCheck input')];
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+boxes.forEach(b => {
+  b.checked = !!saved[b.dataset.k];
+  b.onchange = () => { saved[b.dataset.k] = b.checked; try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {} };
+});
+document.getElementById('resetCheck').onclick = () => {
+  boxes.forEach(b => { b.checked = false; }); saved = {};
+  try { localStorage.removeItem(KEY); } catch (e) {}
+};
+</script>
+<!--PWA-REGISTER-->
+</body>
+</html>

@@ -1,6 +1,6 @@
 // 离线缓存：网页先走网络（保证拿到新版本），断网时用缓存；字体等静态资源缓存优先
 const CACHE = 'physlab-__VERSION__';
-const CORE = ['/', '/oscilloscope/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
+const CORE = ['/', '/oscilloscope/', '/oscilloscope/cheatsheet/', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));

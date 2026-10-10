@@ -43,4 +43,6 @@ osc = ('<!doctype html>\n<html lang="zh-CN">\n<head>\n<meta charset="utf-8">\n'
        + PWA_HEAD + '\n</head>\n<body>\n' + body + '\n<script>\n' + js + '\n</script>\n' + PWA_REGISTER + '\n</body>\n</html>\n')
 (dist / 'oscilloscope').mkdir()
 (dist / 'oscilloscope/index.html').write_text(osc, encoding='utf-8')
+(dist / 'oscilloscope/cheatsheet').mkdir()
+(dist / 'oscilloscope/cheatsheet/index.html').write_text(page((root / 'experiments/oscilloscope/cheatsheet.html').read_text(encoding='utf-8')), encoding='utf-8')
 print('built', sorted(p.relative_to(dist).as_posix() for p in dist.rglob('*') if p.is_file()))

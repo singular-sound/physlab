@@ -25,6 +25,7 @@
 | 位置 | 是什么 |
 |---|---|
 | `site/` | 引导页、离线缓存（`sw.js`）、图标、`manifest.webmanifest`、Cloudflare 响应头（`_headers`） |
+| `experiments/oscilloscope/cheatsheet.html` | 示波器「上课小抄」：现场步骤和可能被问的题，手机看 |
 | `experiments/oscilloscope/src/` | 示波器模拟台的源码（`page.html` 页面和样式，`engine.js` 示波器物理，`panel.js` 面板部件，`lessons.js` 课程，`teach.js` 侧栏与教学） |
 | `build.py` | 把上面拼成 `dist/`，每个实验是一个单文件网页 |
 

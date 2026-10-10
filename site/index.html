@@ -38,7 +38,7 @@ header{display:flex;align-items:baseline;gap:14px;padding-block:28px 8px;flex-wr
 
 .section-title{font:600 13px/1 var(--font-ui);letter-spacing:.12em;color:var(--muted);margin:0 0 14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
-.exp{display:grid;grid-template-rows:auto 1fr;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;text-decoration:none;transition:border-color .15s,transform .15s}
+.exp{position:relative;display:grid;grid-template-rows:auto 1fr;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:border-color .15s,transform .15s}
 .exp:hover{border-color:var(--accent);transform:translateY(-2px)}
 .exp .screen{position:relative;aspect-ratio:16/9;max-width:100%;background:radial-gradient(110% 95% at 50% 46%,#13241a 0%,#0a150f 55%,#030805 100%)}
 .exp canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -48,7 +48,12 @@ header{display:flex;align-items:baseline;gap:14px;padding-block:28px 8px;flex-wr
 .exp p{margin:0;color:var(--muted);font-size:14px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
 .chip{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:1px 9px;color:var(--muted)}
-.go{margin-top:auto;align-self:flex-start;background:var(--accent);color:var(--accent-ink);font-weight:600;border-radius:8px;padding:8px 14px;font-size:14px}
+.actions{margin-top:auto;display:flex;flex-wrap:wrap;gap:10px}
+.go,.go2{font-weight:600;border-radius:8px;padding:8px 14px;font-size:14px;text-decoration:none}
+.go{background:var(--accent);color:var(--accent-ink)}
+.go::after{content:"";position:absolute;inset:0}  /* 整张卡片都能点进实验 */
+.go2{position:relative;z-index:1;background:#fff;color:#18201d;border:1px solid var(--line)}
+.go2:hover{border-color:var(--accent)}
 .soon{border:1.5px dashed var(--line);border-radius:14px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:24px;color:var(--muted);min-height:220px}
 .soon b{color:var(--fg);font-weight:600}
 
@@ -69,21 +74,21 @@ footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:v
 
   <h2 class="section-title">实验列表</h2>
   <div class="grid">
-    <a class="exp" href="oscilloscope/">
+    <div class="exp">
       <div class="screen"><canvas id="lis" aria-hidden="true"></canvas></div>
       <div class="body">
         <div class="no">实验十一 · v1.0</div>
         <h2>示波器原理及使用</h2>
         <p>GOS-630FC 双踪示波器，加两台信号源。测峰峰值和周期、标准方波修正、直流分量、李萨如图形、拍频法。</p>
         <div class="chips"><span class="chip">10 课</span><span class="chip">教学模式 / 仿真模式</span><span class="chip">撤回与禁区</span><span class="chip">学习记录可导出</span></div>
-        <span class="go">进入实验 →</span>
+        <div class="actions"><a class="go" href="oscilloscope/">进入实验 →</a><a class="go2" href="oscilloscope/cheatsheet/">上课小抄</a></div>
       </div>
-    </a>
+    </div>
     <div class="soon"><b>更多实验</b>预习到哪个实验，就往这里加哪个。</div>
   </div>
 
   <div class="notes">
-    <div class="note"><b>用电脑或平板打开</b>仪器面板比较复杂，需要大一点的屏幕。平板建议横屏，手指操作和鼠标一样：按住旋钮拖。</div>
+    <div class="note"><b>用电脑或平板打开</b>仪器面板比较复杂，需要大一点的屏幕。平板建议横屏，手指操作和鼠标一样：按住旋钮拖。「上课小抄」是给手机看的，打开过一次之后断网也能看。</div>
     <div class="note"><b>数据只存在你的浏览器里</b>不需要注册，也不上传。换电脑或清浏览器数据之前，在实验里的「我的记录」页点「备份全部数据」。</div>
     <div class="note"><b>非官方的练习工具</b>内容按《大学物理实验教程》编排，和教材或老师说法有出入的地方，以教材和老师为准。</div>
   </div>
